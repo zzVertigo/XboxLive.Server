@@ -11,10 +11,6 @@ namespace XboxLive.MACS.Structures
     {
         public object Decode2(AsnElt body)
         {
-            byte[] stuff = body.Sub[0].Sub[0].Sub[1].GetOctetString();
-
-            byte[] FILE_TIME = stuff.Take(8).ToArray();
-
             return null;
         }
 
@@ -27,6 +23,10 @@ namespace XboxLive.MACS.Structures
         // Used for verification
         public object Decode204(AsnElt body)
         {
+            byte[] stuff = body.Sub[0].Sub[0].Sub[1].GetOctetString();
+
+            byte[] FILE_TIME = stuff.Take(8).ToArray();
+
             return null;
         }
 
@@ -40,13 +40,10 @@ namespace XboxLive.MACS.Structures
             Array.Copy(Buffer206, 0, Signature_Buffer, 0, 20);
             Array.Copy(Buffer206, 20, Version_Buffer, 0, 64);
 
-            string Version = Encoding.UTF8.GetString(Version_Buffer);
-            string Signature = Encoding.UTF8.GetString(Signature_Buffer);
-
             dynamic result = new PA_XBOX_CLIENT_VERSION
             {
-                Version = Version,
-                Signature = Signature
+                Version = Version_Buffer,
+                Signature = Signature_Buffer
             };
 
             return result;
