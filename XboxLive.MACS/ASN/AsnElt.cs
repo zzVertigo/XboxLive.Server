@@ -1055,6 +1055,8 @@ namespace XboxLive.MACS.ASN
                 case GeneralizedTime:
                     return DecodeMono(objBuf, valOff, valLen, type);
                 case UTF8String:
+                case 10:
+                case 27:
                     return DecodeUTF8(objBuf, valOff, valLen);
                 case BMPString:
                     return DecodeUTF16(objBuf, valOff, valLen);

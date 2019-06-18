@@ -180,7 +180,10 @@ namespace XboxLive.MACS
             S4U2SELF = 129,
             PA_PAC_OPTIONS = 167,
             PK_AS_09_BINDING = 132,
-            CLIENT_CANONICALIZED = 133
+            PA_PAC_REQUEST_EX = 131,
+            CLIENT_CANONICALIZED = 133,
+            PA_XBOX_PRE_PRE_AUTH = 204,
+            PA_XBOX_CLIENT_VERSION = 206
         }
 
         // adapted from https://github.com/skelsec/minikerberos/blob/master/minikerberos/kerberoserror.py#L18-L76
