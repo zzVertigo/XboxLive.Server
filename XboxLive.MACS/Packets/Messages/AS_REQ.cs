@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using XboxLive.MACS.ASN;
@@ -15,12 +16,7 @@ namespace XboxLive.MACS.Packets.Messages
         // 4f f6 ea a3 86 08 dd c5 95 08 55 bf ee c7 dd 00
 
         // Decrypted Online Key (16 bytes) - Temp
-        public byte[] OnlineKeyTest1 =
-        {
-            0x0A, 0x1E, 0x35, 0x33, 0x71, 0x85, 0x31, 0x4D, 0x59, 0x12, 0x38, 0x48, 0x1C, 0x91, 0x53, 0x60
-        };
-
-        public byte[] OnlineKeyTest2 =
+        public byte[] OnlineKey =
         {
             0x4f, 0xf6, 0xea, 0xa3, 0x86, 0x08, 0xdd, 0xc5, 0x95, 0x08, 0x55, 0xbf, 0xee, 0xc7, 0xdd, 0x00
         };
@@ -90,6 +86,27 @@ namespace XboxLive.MACS.Packets.Messages
                    SNAME2 == "MACS.XBOX.COM";
         }
 
+        public bool SignatureCheckXClient(byte[] OnlineKey, byte[] Signature)
+        {
+            HMACMD5 firsthash = new HMACMD5(OnlineKey);
+            byte[] temp_key = firsthash.ComputeHash(Encoding.UTF8.GetBytes("signaturekey\0"));
+
+            HMACMD5 secondhash = new HMACMD5(temp_key);
+            byte[] nonce_hmac_key = secondhash.ComputeHash(SaltedNonce);
+
+            HMACSHA1 thirdhash = new HMACSHA1(nonce_hmac_key);
+            byte[] test_signature = thirdhash.ComputeHash(PA_XBOX_CLIENT_VERSION.Version);
+
+            if (test_signature.SequenceEqual(Signature))
+            {
+                Console.WriteLine("Signature match -> " + BitConverter.ToString(test_signature).Replace("-", "") + " : " + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
+
+                return true;
+            }
+
+            return false;
+        }
+
         public override void Process()
         {
             // Client Initialization
@@ -111,32 +128,17 @@ namespace XboxLive.MACS.Packets.Messages
 
             if (VerifyXClient(KDC_OPTIONS, REALM, SNAME1, SNAME2, ENC_TYPE))
             {
-                //Console.WriteLine("Client is verified!");
-                //Console.WriteLine("Version String: " + PA_XBOX_CLIENT_VERSION.Version);
-
-                HMACMD5 firsthash = new HMACMD5(OnlineKeyTest1);
-                byte[] temp_key = firsthash.ComputeHash(PA_XBOX_CLIENT_VERSION.Signature);
-
-                HMACMD5 secondhash = new HMACMD5(temp_key);
-                byte[] nonce_hmac_key = secondhash.ComputeHash(SaltedNonce);
-
-                HMACSHA1 thirdhash = new HMACSHA1(nonce_hmac_key);
-                byte[] test_signature = thirdhash.ComputeHash(PA_XBOX_CLIENT_VERSION.Version);
-
-                if (test_signature == PA_XBOX_CLIENT_VERSION.Signature)
+                if (SignatureCheckXClient(OnlineKey, PA_XBOX_CLIENT_VERSION.Signature))
                 {
-                    Console.WriteLine("Signatures are good!");
+                    Console.WriteLine("Client checks out!");
                 }
-                else
-                {
-                    Console.WriteLine("Signature mismatch -> " + BitConverter.ToString(test_signature).Replace("-", "") + " : " + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
-                }
-
             }
             else
             {
                 // Drop client XD
                 // Bye!
+
+                return;
             }
 
 
