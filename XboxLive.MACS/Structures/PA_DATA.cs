@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Structures.PA_Structures;
 
@@ -9,9 +7,18 @@ namespace XboxLive.MACS.Structures
 {
     public class PA_DATA
     {
-        public object Decode2(AsnElt body)
+        public PA_ENC_TIMESTAMP Decode2(AsnElt body)
         {
-            return null;
+            // Had to cheat a bit on this - will fix later lol.
+            var EncTimestamp_Bytes = body.Sub[0].Sub[2].Sub[1].Sub[0].GetOctetString().Skip(11).ToArray();
+
+            dynamic result = new PA_ENC_TIMESTAMP
+            {
+                USec = null, // Not used lol
+                Timestamp = EncTimestamp_Bytes
+            };
+
+            return result;
         }
 
         // Not needed

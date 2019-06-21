@@ -36,7 +36,7 @@ namespace XboxLive.MACS.Core
 
         public void Decode(byte[] data)
         {
-            Console.WriteLine("Attempting to decode received packet..");
+            Console.WriteLine("XCLIENT: Attempting to decode received packet..");
 
             try
             {
@@ -69,18 +69,18 @@ namespace XboxLive.MACS.Core
                     }
                     else
                     {
-                        Console.WriteLine("Error: Received unknown msg_type = " + MSG_TYPE + "!");
+                        Console.WriteLine("XCLIENT: Error -> Received unknown msg_type = " + MSG_TYPE + "!");
                     }
                 }
             }
             catch (Exception Ex)
             {
-                Console.WriteLine("Error: " + Ex);
+                Console.WriteLine("XCLIENT: Error -> " + Ex.Message);
 
                 return;
             }
 
-            Console.WriteLine("Successfully decoded packet!");
+            Console.WriteLine("XCLIENT: Successfully decoded packet !");
         }
 
         public void Send(byte[] data)

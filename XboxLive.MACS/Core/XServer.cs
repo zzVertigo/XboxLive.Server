@@ -57,11 +57,11 @@ namespace XboxLive.MACS.Core
 
             XClient client = new XClient(listener, remoteEP);
 
-            Console.WriteLine("Adding new client with an ip " + client.Client.Client.LocalEndPoint + " to dictionary!");
+            Console.WriteLine("XSERVER: Adding new client with an IPv4 Address " + client.Client.Client.LocalEndPoint + " to dictionary!");
 
             bool result = XClientDictionary.TryAdd(client, remoteEP);
 
-            Console.WriteLine("Result was " + result + "!");
+            Console.WriteLine("XSERVER: Result was " + result + "!");
 
             if (result)
             {

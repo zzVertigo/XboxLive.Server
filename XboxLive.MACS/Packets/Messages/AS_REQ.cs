@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Cryptography;
 using System.Text;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Core;
+using XboxLive.MACS.Crypto;
 using XboxLive.MACS.Structures;
 using XboxLive.MACS.Structures.PA_Structures;
 
@@ -27,6 +29,7 @@ namespace XboxLive.MACS.Packets.Messages
         };
 
         public PA_XBOX_CLIENT_VERSION PA_XBOX_CLIENT_VERSION { get; set; }
+        public PA_ENC_TIMESTAMP PA_ENC_TIMESTAMP { get; set; }
 
         public Interop.KdcOptions KDC_OPTIONS { get; set; }
         
@@ -56,7 +59,7 @@ namespace XboxLive.MACS.Packets.Messages
 
             // TODO: Decode PA_DATA
 
-            //var PA_ENC_TIMESTAMP = new PA_DATA().Decode2(PA_DATA);
+            PA_ENC_TIMESTAMP = new PA_DATA().Decode2(PA_DATA);
             //var PA_PAC_REQUEST_EX = new PA_DATA().Decode131(PA_DATA);
             //var PA_XBOX_PRE_PRE_AUTH = new PA_DATA().Decode204(PA_DATA);
             PA_XBOX_CLIENT_VERSION = new PA_DATA().Decode206(PA_DATA);
@@ -83,26 +86,42 @@ namespace XboxLive.MACS.Packets.Messages
             Interop.KERB_ETYPE ENC_TYPE)
         {
             return KDC_OPTIONS == Interop.KdcOptions.CANONICALIZE && REALM == "MACS.XBOX.COM" && SNAME1 == "krbtgt" &&
-                   SNAME2 == "MACS.XBOX.COM";
+                   SNAME2 == "MACS.XBOX.COM" && ENC_TYPE == Interop.KERB_ETYPE.rc4_hmac;
+        }
+
+        public bool VerifyTSXClient(byte[] OnlineKey, byte[] EncryptedTS)
+        {
+            // Still figuring out how I am going to deal with this so I am going to cheat a bit :P
+
+            byte[] dec_ts = KerberosCrypto.KerberosDecrypt(Interop.KERB_ETYPE.rc4_hmac,
+                Interop.KRB_KEY_USAGE_AS_REQ_PA_ENC_TIMESTAMP, OnlineKey, EncryptedTS);
+
+            string actualts = Encoding.UTF8.GetString(dec_ts.Skip(6).Take(15).ToArray());
+
+            if (actualts != null)
+                return true;
+
+            return false;
         }
 
         public bool SignatureCheckXClient(byte[] OnlineKey, byte[] Signature)
         {
             HMACMD5 firsthash = new HMACMD5(OnlineKey);
             byte[] temp_key = firsthash.ComputeHash(Encoding.UTF8.GetBytes("signaturekey\0"));
+            Console.WriteLine("SIGCHK: temp_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
             HMACMD5 secondhash = new HMACMD5(temp_key);
             byte[] nonce_hmac_key = secondhash.ComputeHash(SaltedNonce);
+            Console.WriteLine("SIGCHK: nonce_hmac_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
             HMACSHA1 thirdhash = new HMACSHA1(nonce_hmac_key);
             byte[] test_signature = thirdhash.ComputeHash(PA_XBOX_CLIENT_VERSION.Version);
+            Console.WriteLine("SIGCHK: test_signature -> 0x" + BitConverter.ToString(test_signature).Replace("-", ""));
+
+            Console.WriteLine("SIGCHK: client_signature -> 0x" + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
 
             if (test_signature.SequenceEqual(Signature))
-            {
-                Console.WriteLine("Signature match -> " + BitConverter.ToString(test_signature).Replace("-", "") + " : " + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
-
                 return true;
-            }
 
             return false;
         }
@@ -126,23 +145,37 @@ namespace XboxLive.MACS.Packets.Messages
                 Client.Nonce = NONCE;
             }
 
-            if (VerifyXClient(KDC_OPTIONS, REALM, SNAME1, SNAME2, ENC_TYPE))
+            var XCLIENTCHK = VerifyXClient(KDC_OPTIONS, REALM, SNAME1, SNAME2, ENC_TYPE);
+
+            if (XCLIENTCHK)
             {
-                if (SignatureCheckXClient(OnlineKey, PA_XBOX_CLIENT_VERSION.Signature))
+                Console.WriteLine("AS-REQ: XCLIENTCHK -> " + XCLIENTCHK);
+
+                var SIGCHK = SignatureCheckXClient(OnlineKey, PA_XBOX_CLIENT_VERSION.Signature);
+
+                if (SIGCHK)
                 {
-                    Console.WriteLine("Client checks out!");
+                    Console.WriteLine("AS-REQ: SIGCHK -> " + SIGCHK);
+
+                    var TSCHK = VerifyTSXClient(OnlineKey, PA_ENC_TIMESTAMP.Timestamp);
+
+                    if (TSCHK)
+                    {
+                        Console.WriteLine("AS-REQ: TSCHK -> " + TSCHK);
+
+                        BuildResponse();
+                    }
                 }
             }
             else
             {
                 // Drop client XD
                 // Bye!
-
-                return;
             }
+        }
 
-
-
+        public void BuildResponse()
+        {
             //AsnElt pvnoASN = AsnElt.MakeInteger(5);
             //AsnElt pvnoSEQ = AsnElt.Make(AsnElt.SEQUENCE, pvnoASN);
 
