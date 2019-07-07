@@ -75,7 +75,7 @@ namespace XboxLive.MACS.Core
             }
             catch (Exception Ex)
             {
-                Console.WriteLine("XCLIENT: Error -> " + Ex.Message);
+                Console.WriteLine("XCLIENT: Error -> " + Ex);
 
                 return;
             }

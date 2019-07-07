@@ -1,21 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Cryptography;
 using System.Text;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Core;
 using XboxLive.MACS.Crypto;
 using XboxLive.MACS.Structures;
+using XboxLive.MACS.Structures.KRB_Structures;
 using XboxLive.MACS.Structures.PA_Structures;
 
 namespace XboxLive.MACS.Packets.Messages
 {
     public class AS_REQ : Message
     {
-        // 0A1E35337185314D591238481C915360
-
-        // 4f f6 ea a3 86 08 dd c5 95 08 55 bf ee c7 dd 00
+        public PrincipalName cname { get; set; }
+        public PrincipalName crealm { get; set; }
+        public Ticket reqTicket { get; set; }
 
         // Decrypted Online Key (16 bytes) - Temp
         public byte[] OnlineKey =
@@ -54,14 +55,7 @@ namespace XboxLive.MACS.Packets.Messages
 
         public override void Decode()
         {
-            // PA_DATA -> SEQUENCE -> SEQUENCE -> Index of Sequence -> Index of Value
-            // REQ_BODY -> SEQUENCE -> Index of Sequence -> Index of Value
-
-            // TODO: Decode PA_DATA
-
             PA_ENC_TIMESTAMP = new PA_DATA().Decode2(PA_DATA);
-            //var PA_PAC_REQUEST_EX = new PA_DATA().Decode131(PA_DATA);
-            //var PA_XBOX_PRE_PRE_AUTH = new PA_DATA().Decode204(PA_DATA);
             PA_XBOX_CLIENT_VERSION = new PA_DATA().Decode206(PA_DATA);
 
             KDC_OPTIONS = (Interop.KdcOptions) REQ_BODY.Sub[0].Sub[0].Sub[0].GetInteger();
@@ -139,7 +133,7 @@ namespace XboxLive.MACS.Packets.Messages
                 Client.Realm = "PASSPORT.NET";
                 Client.Domain = "XBOX.COM";
 
-                Client.Key = null;
+                Client.Key = OnlineKey;
 
                 Client.Till = TILL;
                 Client.Nonce = NONCE;
@@ -176,33 +170,80 @@ namespace XboxLive.MACS.Packets.Messages
 
         public void BuildResponse()
         {
-            //AsnElt pvnoASN = AsnElt.MakeInteger(5);
-            //AsnElt pvnoSEQ = AsnElt.Make(AsnElt.SEQUENCE, pvnoASN);
+            AsnElt accountInfo = new PA_DATA().Encode203(1, Client.GamerTag, Client.Domain, Client.Realm, Client.Key);
 
-            //pvnoSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, pvnoSEQ);
+            List<string> cnames = new List<string>()
+            {
+                Client.SerialNumber,
+                Client.Realm
+            };
 
-            //AsnElt msg_typeASN = AsnElt.MakeInteger(11);
-            //AsnElt msg_typeSEQ = AsnElt.Make(AsnElt.SEQUENCE, msg_typeASN);
+            List<AsnElt> allNodes = new List<AsnElt>();
 
-            //msg_typeSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, msg_typeSEQ);
+            // Header 
 
-            //AsnElt crealmASN = AsnElt.MakeString(12, "MACS.XBOX.COM");
-            //AsnElt crealmSEQ = AsnElt.Make(AsnElt.SEQUENCE, crealmASN);
+            AsnElt pvnoASN = AsnElt.MakeInteger(5);
+            AsnElt pvnoSEQ = AsnElt.Make(AsnElt.SEQUENCE, pvnoASN);
+            pvnoSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, pvnoSEQ);
+            allNodes.Add(pvnoSEQ);
 
-            //crealmSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 3, crealmSEQ);
+            AsnElt msg_typeASN = AsnElt.MakeInteger(11);
+            AsnElt msg_typeSEQ = AsnElt.Make(AsnElt.SEQUENCE, msg_typeASN);
+            msg_typeSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, msg_typeSEQ);
+            allNodes.Add(msg_typeSEQ);
 
-            //AsnElt cnameASN = AsnElt.MakeString(27, "105581114003");
-            //AsnElt cnameSEQ = AsnElt.Make(AsnElt.SEQUENCE, cnameASN);
+            // End
 
-            //cnameSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 4, cnameSEQ);
 
-            //AsnElt[] total = new[] { pvnoSEQ, msg_typeSEQ, crealmSEQ, cnameSEQ };
-            //AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, total);
+            // Machine Account Info PA_DATA
 
-            //AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, seq);
-            //totalSeq = AsnElt.MakeImplicit(AsnElt.APPLICATION, 11, totalSeq);
+            AsnElt typeElt = AsnElt.MakeInteger(203);
+            AsnElt nameTypeSeq = AsnElt.Make(AsnElt.SEQUENCE, typeElt);
+            nameTypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, nameTypeSeq);
 
-            //this.Client.Send(totalSeq.Encode());
+            AsnElt padataSeq = AsnElt.Make(AsnElt.SEQUENCE, nameTypeSeq, accountInfo);
+            allNodes.Add(padataSeq);
+
+            // End
+
+
+            // crealm
+
+            crealm = new PrincipalName(Client.Realm);
+
+            AsnElt crealmElt = crealm.Encode();
+            crealmElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, crealmElt);
+            allNodes.Add(crealmElt);
+
+            // End
+
+
+            // cname
+
+            cname = new PrincipalName(cnames);
+
+            AsnElt cnameElt = cname.Encode();
+            cnameElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cnameElt);
+            allNodes.Add(cnameElt);
+
+            // End
+
+            // ticket
+
+            reqTicket = new Ticket();
+            AsnElt ticketElt = reqTicket.Encode(OnlineKey);
+            ticketElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, ticketElt);
+            allNodes.Add(ticketElt);
+
+            // End
+
+            AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, allNodes.ToArray());
+
+            byte[] toSend = seq.Encode();
+
+            Console.WriteLine("AS-REQ: Response -> " + BitConverter.ToString(toSend).Replace("-", ""));
+
+            this.Client.Send(toSend);
         }
 
         public override string ToString()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Structures.PA_Structures;
@@ -7,6 +8,34 @@ namespace XboxLive.MACS.Structures
 {
     public class PA_DATA
     {
+        public AsnElt Encode203(long uniqueid, string gamertag, string domain, string realm, byte[] key)
+        {
+            byte[] buffer = new byte[84];
+
+            BinaryWriter machineaccount = new BinaryWriter(new MemoryStream(buffer));
+            machineaccount.Write((long)uniqueid);
+            machineaccount.Write((string)gamertag);
+            machineaccount.Write((string)domain);
+            machineaccount.Write((string)realm);
+            machineaccount.Write((byte[])key);
+
+            machineaccount.Close();
+
+            AsnElt etypeAsn = AsnElt.MakeInteger((int)Interop.KERB_ETYPE.rc4_hmac);
+            AsnElt etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
+
+            etypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, etypeSeq);
+
+            AsnElt cipherAsn = AsnElt.MakeBlob(buffer);
+            AsnElt cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
+
+            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, cipherSeq);
+
+            AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
+
+            return totalSeq;
+        }
+
         public PA_ENC_TIMESTAMP Decode2(AsnElt body)
         {
             // Had to cheat a bit on this - will fix later lol.
@@ -19,22 +48,6 @@ namespace XboxLive.MACS.Structures
             };
 
             return result;
-        }
-
-        // Not needed
-        public object Decode131(AsnElt body)
-        {
-            return null;
-        }
-
-        // Used for verification
-        public object Decode204(AsnElt body)
-        {
-            byte[] stuff = body.Sub[0].Sub[0].Sub[1].GetOctetString();
-
-            byte[] FILE_TIME = stuff.Take(8).ToArray();
-
-            return null;
         }
 
         public PA_XBOX_CLIENT_VERSION Decode206(AsnElt body)
