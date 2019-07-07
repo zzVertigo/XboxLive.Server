@@ -3,7 +3,7 @@ Experimenting with the revival of Xbox Live 1.0
 
 Warning: This is by no means complete and there is zero guarnatee that I my self will get the XBL service running.
 
-The parsing parts of the server are from: https://github.com/GhostPack/Rubeus
+The parsing & crypto parts of the server are from: https://github.com/GhostPack/Rubeus
 
 Here is what is going on right now so that people don't get triggered/confused. What I am doing is taking a different approach to what others have taken and it may seem a little out of sort right now but as time goes on it will be structured a lot better than it is right now since I am only experimenting with the idea.
 
