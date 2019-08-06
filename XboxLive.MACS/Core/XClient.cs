@@ -63,6 +63,15 @@ namespace XboxLive.MACS.Core
                             ReceviedMessage.PA_DATA = PA_DATA;
                             ReceviedMessage.REQ_BODY = REQ_BODY;
 
+                            if (MSG_TYPE == 10 && Program.AuthAttempts == 5)
+                            {
+                                Console.WriteLine("XCLIENT: Error -> Unable to authenticate console!");
+
+                                return;
+                            }
+
+                            Console.WriteLine("XCLIENT: Authentication Attempt #" + Program.AuthAttempts);
+
                             ReceviedMessage.Decode();
                             ReceviedMessage.Process();
                         }

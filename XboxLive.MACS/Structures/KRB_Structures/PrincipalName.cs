@@ -16,17 +16,17 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             name_string = new List<string>();
         }
 
-        public PrincipalName(string principal)
+        public PrincipalName(string principal, int name_type)
         {
-            name_type = 1;
+            this.name_type = name_type;
 
             name_string = new List<string>();
             name_string.Add(principal);
         }
 
-        public PrincipalName(List<string> names)
+        public PrincipalName(List<string> names, int name_type)
         {
-            name_type = 1;
+            this.name_type = name_type;
 
             name_string = names;
         }
@@ -48,7 +48,7 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             }
 
             AsnElt stringSeq = AsnElt.Make(AsnElt.SEQUENCE, strings);
-            AsnElt stringSeq2 = AsnElt.Make(AsnElt.SEQUENCE, new[] { stringSeq });
+            AsnElt stringSeq2 = AsnElt.Make(AsnElt.SEQUENCE, stringSeq);
             stringSeq2 = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, stringSeq2);
             
             AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, nameTypeSeq, stringSeq2);

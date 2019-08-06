@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using XboxLive.MACS.ASN;
@@ -10,6 +11,9 @@ namespace XboxLive.MACS
 {
     public class Program
     {
+        // Temp
+        public static int AuthAttempts = 0;
+
         private static void Main(string[] args)
         {
             // TODO: Arguments!

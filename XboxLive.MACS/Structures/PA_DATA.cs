@@ -8,12 +8,12 @@ namespace XboxLive.MACS.Structures
 {
     public class PA_DATA
     {
-        public AsnElt Encode203(long uniqueid, string gamertag, string domain, string realm, byte[] key)
+        public AsnElt Encode203(long puid, string gamertag, string domain, string realm, byte[] key)
         {
             byte[] buffer = new byte[84];
 
             BinaryWriter machineaccount = new BinaryWriter(new MemoryStream(buffer));
-            machineaccount.Write((long)uniqueid);
+            machineaccount.Write((long)puid);
             machineaccount.Write((string)gamertag);
             machineaccount.Write((string)domain);
             machineaccount.Write((string)realm);
@@ -29,7 +29,7 @@ namespace XboxLive.MACS.Structures
             AsnElt cipherAsn = AsnElt.MakeBlob(buffer);
             AsnElt cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
 
-            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, cipherSeq);
+            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cipherSeq);
 
             AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
 

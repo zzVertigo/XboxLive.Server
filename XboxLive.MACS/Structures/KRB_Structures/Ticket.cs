@@ -22,10 +22,10 @@ namespace XboxLive.MACS.Structures.KRB_Structures
                 "MACS.XBOX.COM"
             };
 
-            sname = new PrincipalName(snames);
+            sname = new PrincipalName(snames, 2);
 
             AsnElt tkt_vnoAsn = AsnElt.MakeInteger(5);
-            AsnElt tkt_vnoSeq = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[] { tkt_vnoAsn });
+            AsnElt tkt_vnoSeq = AsnElt.Make(AsnElt.SEQUENCE, tkt_vnoAsn);
             tkt_vnoSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, tkt_vnoSeq);
 
 
@@ -40,6 +40,7 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             AsnElt snameAsn = sname.Encode();
             snameAsn = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, snameAsn);
 
+            // TODO: Find proper key type
             encdata = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac, Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY, OnlineKey, SessionKey));
 
             AsnElt enc_partAsn = encdata.Encode();
@@ -49,7 +50,7 @@ namespace XboxLive.MACS.Structures.KRB_Structures
 
             AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, new[] { tkt_vnoSeq, realmAsnSeq, snameAsn, enc_partSeq });
             AsnElt totalSeq2 = AsnElt.Make(AsnElt.SEQUENCE, new[] { totalSeq });
-            totalSeq2 = AsnElt.MakeImplicit(AsnElt.APPLICATION, 1, totalSeq2);
+            totalSeq2 = AsnElt.MakeImplicit(AsnElt.APPLICATION, 0, totalSeq2);
 
             return totalSeq2;
         }
