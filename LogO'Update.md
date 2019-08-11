@@ -9,3 +9,7 @@ June 17th, 2019:
 June 21st, 2019:
   - Encrypted timestamp is now decrypted! :D
   - Now to begin working on AS_REP
+
+August 7th, 2019:
+  - Response is now built however the values I have inserted are not accepted by the console quite yet :(
+  - We are getting close tho ;)
