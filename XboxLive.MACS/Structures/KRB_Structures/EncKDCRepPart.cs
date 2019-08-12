@@ -10,12 +10,9 @@ namespace XboxLive.MACS.Structures.KRB_Structures
         public EncryptionKey key { get; set; }
         public LastReq lastReq { get; set; }
         public uint nonce { get; set; }
-        public DateTime key_expiration { get; set; }
         public Interop.TicketFlags flags { get; set; }
-        public DateTime authtime { get; set; }       
-        public DateTime starttime { get; set; }
+        public DateTime authtime { get; set; }   
         public DateTime endtime { get; set; }
-        public DateTime renew_till { get; set; }
         public string realm { get; set; }
         public PrincipalName sname { get; set; }
 
@@ -41,11 +38,6 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             nonceSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, nonceSeq);
             asnElements.Add(nonceSeq);
 
-            //AsnElt key_expirationElt = AsnElt.MakeTimeAuto(key_expiration);
-            //AsnElt key_expirationSeq = AsnElt.Make(AsnElt.SEQUENCE, key_expirationElt);
-            //key_expirationSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 3, key_expirationSeq);
-            //asnElements.Add(key_expirationSeq);
-
             AsnElt flagsElt = AsnElt.MakeInteger(Convert.ToInt32(flags));
             AsnElt flagsSeq = AsnElt.Make(AsnElt.SEQUENCE, flagsElt);
             flagsSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 4, flagsSeq);
@@ -56,20 +48,10 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             authtimeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 5, authtimeSeq);
             asnElements.Add(authtimeSeq);
 
-            //AsnElt starttimeElt = AsnElt.MakeTimeAuto(starttime);
-            //AsnElt starttimeSeq = AsnElt.Make(AsnElt.SEQUENCE, starttimeElt);
-            //starttimeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 6, starttimeSeq);
-            //asnElements.Add(starttimeSeq);
-
             AsnElt endtimeElt = AsnElt.MakeTimeAuto(endtime);
             AsnElt endtimeSeq = AsnElt.Make(AsnElt.SEQUENCE, endtimeElt);
             endtimeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 7, endtimeSeq);
             asnElements.Add(endtimeSeq);
-
-            //AsnElt renew_tillElt = AsnElt.MakeTimeAuto(renew_till);
-            //AsnElt renew_tillSeq = AsnElt.Make(AsnElt.SEQUENCE, renew_tillElt);
-            //renew_tillSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 8, renew_tillSeq);
-            //asnElements.Add(renew_tillSeq);
 
             // TODO: Find proper string type
             AsnElt realmElt = AsnElt.MakeString(12, realm);

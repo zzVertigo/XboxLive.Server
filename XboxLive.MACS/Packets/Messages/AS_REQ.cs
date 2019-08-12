@@ -205,19 +205,20 @@ namespace XboxLive.MACS.Packets.Messages
 
             // Machine Account Info PA_DATA
 
-            EncryptedData encryptedAccount = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac, Interop.KRB_KEY_USAGE_KRB_PRIV_ENCRYPTED_PART, nonceHmac, accountInfo.Encode()));
+            EncryptedData encryptedAccount = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, 1, KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac, Interop.KRB_KEY_USAGE_KRB_PRIV_ENCRYPTED_PART, nonceHmac, accountInfo.Encode()));
 
             AsnElt typeElt = AsnElt.MakeInteger(203);
             AsnElt nameTypeSeq = AsnElt.Make(AsnElt.SEQUENCE, typeElt);
             nameTypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, nameTypeSeq);
 
             AsnElt padataSeq = AsnElt.Make(AsnElt.SEQUENCE, nameTypeSeq, encryptedAccount.Encode());
-            allNodes.Add(padataSeq);
+            //allNodes.Add(padataSeq);
 
             // End
 
             // crealm
-            AsnElt crealmElt = AsnElt.MakeString(AsnElt.UTF8String, "PASSPORT.NET");
+
+            AsnElt crealmElt = AsnElt.MakeString(AsnElt.GeneralString, "PASSPORT.NET");
             AsnElt crealmSeq = AsnElt.Make(AsnElt.SEQUENCE, crealmElt);
             crealmSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 3, crealmSeq);
             allNodes.Add(crealmSeq);
@@ -226,7 +227,7 @@ namespace XboxLive.MACS.Packets.Messages
 
             // cname
 
-            cname = new PrincipalName(cnames, 1);
+            cname = new PrincipalName(cnames, 2);
 
             AsnElt cnameElt = cname.Encode();
             cnameElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 4, cnameElt);
@@ -268,17 +269,11 @@ namespace XboxLive.MACS.Packets.Messages
 
                 EndPart.nonce = (uint)(new Random(1206).Next(1000, 10000));
 
-                EndPart.key_expiration = new DateTime(2021, 12, 5);
-
-                EndPart.flags = Interop.TicketFlags.enc_pa_rep;
+                EndPart.flags = Interop.TicketFlags.initial | Interop.TicketFlags.pre_authent;
 
                 EndPart.authtime = DateTime.Now;
-
-                EndPart.starttime = DateTime.Now;
                 
                 EndPart.endtime = new DateTime(2019, 8, 7);
-
-                EndPart.renew_till = new DateTime(2021, 12, 5);
 
                 EndPart.realm = "MACS.XBOX.COM";
             }
@@ -289,7 +284,7 @@ namespace XboxLive.MACS.Packets.Messages
             EndPartData = KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac,
                 Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY, Client.Key, EndPartData);
 
-            EncryptedData encData = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, EndPartData);
+            EncryptedData encData = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, 1, EndPartData);
 
             AsnElt encPart = AsnElt.MakeImplicit(AsnElt.CONTEXT, 6, encData.Encode());
             allNodes.Add(encPart);
@@ -297,8 +292,10 @@ namespace XboxLive.MACS.Packets.Messages
             // End
 
             AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, allNodes.ToArray());
+            AsnElt seq2 = AsnElt.Make(AsnElt.SEQUENCE, seq);
+            seq2 = AsnElt.MakeImplicit(AsnElt.APPLICATION, 11, seq2);
 
-            byte[] toSend = seq.Encode();
+            byte[] toSend = seq2.Encode();
 
             Console.WriteLine("AS-REQ: Response -> " + BitConverter.ToString(toSend).Replace("-", ""));
 

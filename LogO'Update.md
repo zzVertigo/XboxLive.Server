@@ -13,3 +13,7 @@ June 21st, 2019:
 August 7th, 2019:
   - Response is now built however the values I have inserted are not accepted by the console quite yet :(
   - We are getting close tho ;)
+
+August 11th, 2019:
+  - Fixed the everything heck out of AS_REP.. turns out I had it somewhat wrong lol
+  - There is an annoying issue with one of the sequences that I will fix hopefully in the next commit!
