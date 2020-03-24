@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
@@ -6,69 +7,36 @@ using System.Text;
 using System.Threading;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Core;
+using XboxLive.MACS.Core.Configuration;
 
 namespace XboxLive.MACS
 {
     public class Program
     {
-        // Temp
-        public static int AuthAttempts = 0;
+        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         private static void Main(string[] args)
         {
-            // TODO: Arguments!
+            Stopwatch watch = new Stopwatch();
 
-            Console.Title = "Xbox Live Machine Account Creation Server";
+            watch.Start();
+
+            var staticData = new StaticData();
+
+            staticData.LoadConfig();
+
+            Console.Title = "Xbox Live MACS Server";
 
             Resources.Start();
 
-            XServer server = new XServer();
+            XServer server = new XServer(staticData.ServerOptions);
             server.Start();
 
-            Thread.Sleep(-1);
+            watch.Stop();
 
-            //while (true)
-            //{
-            //    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 88);
-            //    byte[] data = udpServer.Receive(ref remoteEP);
+            Logger.Info($"Server started in {watch.Elapsed.TotalMilliseconds} ms");
 
-            //    Console.WriteLine("Received " + data.Length + " bytes from " + remoteEP);
-
-            //    Console.WriteLine("Data: " + BitConverter.ToString(data).Replace("-", ""));
-
-            //    // First Request is AS_REQ
-
-            //    data = AsnIO.FindBER(data);
-            //    AsnElt AS_REQ = AsnElt.Decode(data);
-
-            //    AsnElt[] KDC_REQ = AS_REQ.Sub[0].Sub;
-
-            //    foreach (AsnElt s in KDC_REQ)
-            //    {
-            //        switch (s.TagValue)
-            //        {
-            //            case 1:
-            //                Console.WriteLine("PVNO: " + s.Sub[0].GetInteger());
-            //                break;
-            //            case 2:
-            //                Console.WriteLine("MSG TYPE: " + s.Sub[0].GetInteger());
-            //                break;
-            //            case 3:
-            //                Console.WriteLine("PA DATA");
-            //                foreach (AsnElt pa in s.Sub[0].Sub)
-            //                {
-            //                    Console.WriteLine(pa);
-            //                }
-            //                break;
-            //            case 4:
-            //               
-            //                break;
-            //            default:
-            //                throw new Exception("Invalid tag AS_REQ value: " + s.TagValue);
-            //                break;
-            //        }
-            //    }
-            //}
+            Console.ReadKey();
         }
     }
 }

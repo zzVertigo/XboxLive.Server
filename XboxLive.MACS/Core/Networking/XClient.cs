@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Packets;
 
 namespace XboxLive.MACS.Core
 {
-    public class XClient
+    public class XClient : UdpClient
     {
+        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         public long UniqueID { get; set; }
 
         public string SerialNumber { get; set; }
@@ -24,19 +27,9 @@ namespace XboxLive.MACS.Core
 
         public long Nonce { get; set; }
 
-        public UdpClient Client { get; set; }
-
-        public IPEndPoint RemoteEP { get; set; }
-
-        public XClient(UdpClient client, IPEndPoint remoteep)
-        {
-            this.Client = client;
-            this.RemoteEP = remoteep;
-        }
-
         public void Decode(byte[] data)
         {
-            Console.WriteLine("XCLIENT: Attempting to decode received packet..");
+            Logger.Info("Attemping to decode received packet..");
 
             try
             {
@@ -63,38 +56,34 @@ namespace XboxLive.MACS.Core
                             ReceviedMessage.PA_DATA = PA_DATA;
                             ReceviedMessage.REQ_BODY = REQ_BODY;
 
-                            if (MSG_TYPE == 10 && Program.AuthAttempts == 5)
-                            {
-                                Console.WriteLine("XCLIENT: Error -> Unable to authenticate console!");
-
-                                return;
-                            }
-
-                            Console.WriteLine("XCLIENT: Authentication Attempt #" + Program.AuthAttempts);
-
                             ReceviedMessage.Decode();
                             ReceviedMessage.Process();
                         }
                     }
                     else
                     {
-                        Console.WriteLine("XCLIENT: Error -> Received unknown msg_type = " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
                     }
                 }
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("XCLIENT: Error -> " + Ex);
+                Logger.Error("Failed to decode received packet : " + ex);
 
                 return;
             }
 
-            Console.WriteLine("XCLIENT: Successfully decoded packet !");
+            Logger.Info("Successfully decoded received packet!");
         }
 
         public void Send(byte[] data)
         {
-            this.Client.Send(data, data.Length, RemoteEP);
+            int length = XServer.SendToClient(data);
+
+            if (length > 0)
+                Logger.Info("Sent " + length + " bytes back to client!");
+            else
+                Logger.Warn("why are we sending no data??");
         }
     }
 }

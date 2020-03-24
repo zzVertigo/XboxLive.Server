@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using NLog;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Core;
 using XboxLive.MACS.Crypto;
@@ -14,6 +15,7 @@ namespace XboxLive.MACS.Packets.Messages
 {
     public class AS_REQ : Message
     {
+        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public PrincipalName cname { get; set; }
         public PrincipalName crealm { get; set; }
         public Ticket reqTicket { get; set; }
@@ -88,37 +90,47 @@ namespace XboxLive.MACS.Packets.Messages
 
         public bool VerifyTSXClient(byte[] OnlineKey, byte[] EncryptedTS)
         {
-            // Still figuring out how I am going to deal with this so I am going to cheat a bit :P
-
             byte[] dec_ts = KerberosCrypto.KerberosDecrypt(Interop.KERB_ETYPE.rc4_hmac,
                 Interop.KRB_KEY_USAGE_AS_REQ_PA_ENC_TIMESTAMP, OnlineKey, EncryptedTS);
 
-            string actualts = Encoding.UTF8.GetString(dec_ts.Skip(6).Take(15).ToArray());
+            Logger.Info(BitConverter.ToString(dec_ts).Replace("-", ""));
 
-            if (actualts != null)
+            AsnElt timestamp_encoded = AsnElt.Decode(dec_ts, false);
+
+            DateTime timestamp = timestamp_encoded.Sub[0].Sub[0].GetTime(24);
+            long usec = timestamp_encoded.Sub[1].Sub[0].GetInteger();
+
+            if (timestamp != null && usec != null)
+            {
+                Logger.Info("Successfully decrypted & decoded timestamp/usec");
+                Logger.Info(timestamp + " : " + usec);
+
                 return true;
-
-            return false;
+            }
+            else
+                return false;
         }
 
         public bool SignatureCheckXClient(byte[] OnlineKey, byte[] Signature)
         {
             HMACMD5 firsthash = new HMACMD5(OnlineKey);
             byte[] temp_key = firsthash.ComputeHash(Encoding.UTF8.GetBytes("signaturekey\0"));
-            Console.WriteLine("SIGCHK: temp_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
+            Logger.Info("temp_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
             HMACMD5 secondhash = new HMACMD5(temp_key);
             nonceHmac = secondhash.ComputeHash(SaltedNonce);
-            Console.WriteLine("SIGCHK: nonce_hmac_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
+            Logger.Info("nonce_hmac_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
             HMACSHA1 thirdhash = new HMACSHA1(nonceHmac);
             byte[] test_signature = thirdhash.ComputeHash(PA_XBOX_CLIENT_VERSION.Version);
-            Console.WriteLine("SIGCHK: test_signature -> 0x" + BitConverter.ToString(test_signature).Replace("-", ""));
+            Logger.Info("SIGCHK: test_signature -> 0x" + BitConverter.ToString(test_signature).Replace("-", ""));
 
-            Console.WriteLine("SIGCHK: client_signature -> 0x" + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
+            Logger.Info("SIGCHK: client_signature -> 0x" + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Signature).Replace("-", ""));
 
             if (test_signature.SequenceEqual(Signature))
                 return true;
+
+            Logger.Warn("Failed to signature check XClient!");
 
             return false;
         }
@@ -146,19 +158,19 @@ namespace XboxLive.MACS.Packets.Messages
 
             if (XCLIENTCHK)
             {
-                Console.WriteLine("AS-REQ: XCLIENTCHK -> " + XCLIENTCHK);
+                Logger.Info("XCLIENTCHK -> " + XCLIENTCHK);
 
                 var SIGCHK = SignatureCheckXClient(OnlineKey, PA_XBOX_CLIENT_VERSION.Signature);
 
                 if (SIGCHK)
                 {
-                    Console.WriteLine("AS-REQ: SIGCHK -> " + SIGCHK);
+                    Logger.Info("SIGCHK -> " + SIGCHK);
 
                     var TSCHK = VerifyTSXClient(OnlineKey, PA_ENC_TIMESTAMP.Timestamp);
 
                     if (TSCHK)
                     {
-                        Console.WriteLine("AS-REQ: TSCHK -> " + TSCHK);
+                        Logger.Info("TSCHK -> " + TSCHK);
 
                         BuildResponse();
                     }
@@ -179,7 +191,7 @@ namespace XboxLive.MACS.Packets.Messages
             // - enckdcpart
 
             // TODO: Find out what the MD4 hashed key is.
-            AsnElt accountInfo = new PA_DATA().Encode203(1, Client.GamerTag, Client.Domain, Client.Realm, Encoding.UTF8.GetBytes(new char[16]));
+            AsnElt accountInfo = new PA_DATA().Encode203(1, Client.GamerTag, Client.Domain, Client.Realm, Encoding.UTF8.GetBytes("e8e17429c4701a494f7e0baadfbabc55"));
 
             List<string> cnames = new List<string>()
             {
@@ -297,11 +309,7 @@ namespace XboxLive.MACS.Packets.Messages
 
             byte[] toSend = seq2.Encode();
 
-            Console.WriteLine("AS-REQ: Response -> " + BitConverter.ToString(toSend).Replace("-", ""));
-
             this.Client.Send(toSend);
-
-            Program.AuthAttempts += 1;
         }
 
         public override string ToString()
