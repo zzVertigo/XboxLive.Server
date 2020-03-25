@@ -10,28 +10,28 @@ namespace XboxLive.MACS.Structures
     {
         public AsnElt Encode203(long puid, string gamertag, string domain, string realm, byte[] key)
         {
-            byte[] buffer = new byte[84];
+            var buffer = new byte[84];
 
-            BinaryWriter machineaccount = new BinaryWriter(new MemoryStream(buffer));
-            machineaccount.Write((long)puid);
-            machineaccount.Write((string)gamertag);
-            machineaccount.Write((string)domain);
-            machineaccount.Write((string)realm);
-            machineaccount.Write((byte[])key);
+            var machineaccount = new BinaryWriter(new MemoryStream(buffer));
+            machineaccount.Write(puid);
+            machineaccount.Write(gamertag);
+            machineaccount.Write(domain);
+            machineaccount.Write(realm);
+            machineaccount.Write(key);
 
             machineaccount.Close();
 
-            AsnElt etypeAsn = AsnElt.MakeInteger((int)Interop.KERB_ETYPE.rc4_hmac);
-            AsnElt etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
+            var etypeAsn = AsnElt.MakeInteger((int) Interop.KERB_ETYPE.rc4_hmac);
+            var etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
 
             etypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, etypeSeq);
 
-            AsnElt cipherAsn = AsnElt.MakeBlob(buffer);
-            AsnElt cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
+            var cipherAsn = AsnElt.MakeBlob(buffer);
+            var cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
 
             cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cipherSeq);
 
-            AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
+            var totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
 
             return totalSeq;
         }
@@ -52,10 +52,10 @@ namespace XboxLive.MACS.Structures
 
         public PA_XBOX_CLIENT_VERSION Decode206(AsnElt body)
         {
-            byte[] Signature_Buffer = new byte[20];
-            byte[] Version_Buffer = new byte[65];
+            var Signature_Buffer = new byte[20];
+            var Version_Buffer = new byte[65];
 
-            byte[] Buffer206 = body.Sub[0].Sub[1].Sub[1].GetOctetString();
+            var Buffer206 = body.Sub[0].Sub[1].Sub[1].GetOctetString();
 
             Array.Copy(Buffer206, 0, Signature_Buffer, 0, 20);
             Array.Copy(Buffer206, 20, Version_Buffer, 0, 65);

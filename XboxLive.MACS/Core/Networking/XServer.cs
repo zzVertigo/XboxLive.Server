@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -10,16 +9,16 @@ namespace XboxLive.MACS.Core
 {
     public class XServer
     {
-        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private static Socket udpServer = null;
-        private Thread serverThread = null;
+        private static Socket udpServer;
 
-        private static EndPoint remoteEndpoint = null;
+        private static EndPoint remoteEndpoint;
 
-        private byte[] receiveBuffer = null;
+        private readonly ServerOptions options;
 
-        private ServerOptions options;
+        private byte[] receiveBuffer;
+        private Thread serverThread;
 
         public XServer(ServerOptions serverOptions)
         {
@@ -43,20 +42,20 @@ namespace XboxLive.MACS.Core
 
         public static int SendToClient(byte[] data)
         {
-            int length = udpServer.SendTo(data, remoteEndpoint);
+            var length = udpServer.SendTo(data, remoteEndpoint);
 
             return length;
         }
 
         public void ReadCallback()
         {
-            XClient xclient = new XClient();
+            var xclient = new XClient();
 
             while (true)
             {
-                int length = udpServer.ReceiveFrom(receiveBuffer, ref remoteEndpoint);
+                var length = udpServer.ReceiveFrom(receiveBuffer, ref remoteEndpoint);
 
-                byte[] tempBuffer = new byte[length];
+                var tempBuffer = new byte[length];
 
                 Array.Copy(receiveBuffer, 0, tempBuffer, 0, length); // create a properly sized buffer :)
 
@@ -65,7 +64,7 @@ namespace XboxLive.MACS.Core
 
             //UdpClient listener = (UdpClient) Ar.AsyncState;
             //byte[] receivedBytes = listener.EndReceive(Ar, ref remoteEP);
-            
+
             //// The assumption is remoteEP updates to the sending ip (XBOX)
 
             //XClient xclient = new XClient(listener, remoteEP);

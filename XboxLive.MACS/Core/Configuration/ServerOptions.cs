@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace XboxLive.MACS.Core.Configuration
+﻿namespace XboxLive.MACS.Core.Configuration
 {
     public class ServerOptions
     {

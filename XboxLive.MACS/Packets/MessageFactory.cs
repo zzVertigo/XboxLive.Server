@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using XboxLive.MACS.Packets.Messages;
 
 namespace XboxLive.MACS.Packets

@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using XboxLive.MACS.ASN;
+using NLog;
 using XboxLive.MACS.Core;
 using XboxLive.MACS.Core.Configuration;
 
@@ -13,11 +8,11 @@ namespace XboxLive.MACS
 {
     public class Program
     {
-        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private static void Main(string[] args)
         {
-            Stopwatch watch = new Stopwatch();
+            var watch = new Stopwatch();
 
             watch.Start();
 
@@ -29,7 +24,7 @@ namespace XboxLive.MACS
 
             Resources.Start();
 
-            XServer server = new XServer(staticData.ServerOptions);
+            var server = new XServer(staticData.ServerOptions);
             server.Start();
 
             watch.Stop();
