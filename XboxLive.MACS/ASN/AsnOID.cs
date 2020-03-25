@@ -6,10 +6,10 @@ namespace XboxLive.MACS.ASN
 {
     public class AsnOID
     {
-
-        static Dictionary<string, string> OIDToName =
+        private static readonly Dictionary<string, string> OIDToName =
             new Dictionary<string, string>();
-        static Dictionary<string, string> NameToOID =
+
+        private static readonly Dictionary<string, string> NameToOID =
             new Dictionary<string, string>();
 
         static AsnOID()
@@ -202,17 +202,11 @@ namespace XboxLive.MACS.ASN
             Reg("1.3.6.1.4.1.311.20.2.3", "ms-UPN");
         }
 
-        static void Reg(string oid, string name)
+        private static void Reg(string oid, string name)
         {
-            if (!OIDToName.ContainsKey(oid))
-            {
-                OIDToName.Add(oid, name);
-            }
-            string nn = Normalize(name);
-            if (NameToOID.ContainsKey(nn))
-            {
-                throw new Exception("OID name collision: " + nn);
-            }
+            if (!OIDToName.ContainsKey(oid)) OIDToName.Add(oid, name);
+            var nn = Normalize(name);
+            if (NameToOID.ContainsKey(nn)) throw new Exception("OID name collision: " + nn);
             NameToOID.Add(nn, oid);
 
             /*
@@ -224,36 +218,25 @@ namespace XboxLive.MACS.ASN
                 && name.Length >= 7 && name[5] == '-')
             {
                 if (name.StartsWith("id-ad-"))
-                {
                     Reg(oid, name.Substring(6) + "-IA");
-                }
                 else if (name.StartsWith("id-kp-"))
-                {
                     Reg(oid, name.Substring(6) + "-EKU");
-                }
                 else
-                {
                     Reg(oid, name.Substring(6));
-                }
             }
         }
 
-        static string Normalize(string name)
+        private static string Normalize(string name)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (char c in name)
+            var sb = new StringBuilder();
+            foreach (var c in name)
             {
-                int d = (int)c;
-                if (d <= 32 || d == '-')
-                {
-                    continue;
-                }
-                if (d >= 'A' && d <= 'Z')
-                {
-                    d += 'a' - 'A';
-                }
-                sb.Append((char)c);
+                var d = c;
+                if (d <= 32 || d == '-') continue;
+                if (d >= 'A' && d <= 'Z') d += (char)('a' - 'A');
+                sb.Append(c);
             }
+
             return sb.ToString();
         }
 
@@ -264,16 +247,11 @@ namespace XboxLive.MACS.ASN
 
         public static string ToOID(string name)
         {
-            if (IsNumericOID(name))
-            {
-                return name;
-            }
-            string nn = Normalize(name);
+            if (IsNumericOID(name)) return name;
+            var nn = Normalize(name);
             if (!NameToOID.ContainsKey(nn))
-            {
                 throw new AsnException(
                     "unrecognized OID name: " + name);
-            }
             return NameToOID[nn];
         }
 
@@ -286,27 +264,13 @@ namespace XboxLive.MACS.ASN
              * -- it does not contain two consecutive dots
              * -- it contains at least one dot
              */
-            foreach (char c in oid)
-            {
+            foreach (var c in oid)
                 if (!(c >= '0' && c <= '9') && c != '.')
-                {
                     return false;
-                }
-            }
-            if (oid.StartsWith(".") || oid.EndsWith("."))
-            {
-                return false;
-            }
-            if (oid.IndexOf("..") >= 0)
-            {
-                return false;
-            }
-            if (oid.IndexOf('.') < 0)
-            {
-                return false;
-            }
+            if (oid.StartsWith(".") || oid.EndsWith(".")) return false;
+            if (oid.IndexOf("..") >= 0) return false;
+            if (oid.IndexOf('.') < 0) return false;
             return true;
         }
     }
-
 }

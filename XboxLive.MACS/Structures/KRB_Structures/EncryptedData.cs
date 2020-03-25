@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using XboxLive.MACS.ASN;
+﻿using XboxLive.MACS.ASN;
 
 namespace XboxLive.MACS.Structures.KRB_Structures
 {
     public class EncryptedData
     {
-        public int etype { get; set; }
-        public int kvno { get; set; }
-        public byte[] cipher { get; set; }
-
         public EncryptedData(int encType, int Kvno, byte[] data)
         {
             etype = encType;
@@ -18,30 +11,34 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             kvno = Kvno;
         }
 
+        public int etype { get; set; }
+        public int kvno { get; set; }
+        public byte[] cipher { get; set; }
+
         public AsnElt Encode()
         {
-            AsnElt etypeAsn = AsnElt.MakeInteger(etype);
-            AsnElt etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
+            var etypeAsn = AsnElt.MakeInteger(etype);
+            var etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
             etypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, etypeSeq);
 
-            
-            AsnElt cipherAsn = AsnElt.MakeBlob(cipher);
-            AsnElt cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
+
+            var cipherAsn = AsnElt.MakeBlob(cipher);
+            var cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
             cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cipherSeq);
 
 
             if (kvno != 0)
             {
-                AsnElt kvnoAsn = AsnElt.MakeInteger(kvno);
-                AsnElt kvnoSeq = AsnElt.Make(AsnElt.SEQUENCE, kvnoAsn);
+                var kvnoAsn = AsnElt.MakeInteger(kvno);
+                var kvnoSeq = AsnElt.Make(AsnElt.SEQUENCE, kvnoAsn);
                 kvnoSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, kvnoSeq);
 
-                AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, kvnoSeq, cipherSeq);
+                var totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, kvnoSeq, cipherSeq);
                 return totalSeq;
             }
             else
             {
-                AsnElt totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
+                var totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
                 return totalSeq;
             }
         }

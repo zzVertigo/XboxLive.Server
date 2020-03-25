@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
+using NLog;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Packets;
 
@@ -9,7 +8,7 @@ namespace XboxLive.MACS.Core
 {
     public class XClient : UdpClient
     {
-        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public long UniqueID { get; set; }
 
@@ -33,24 +32,25 @@ namespace XboxLive.MACS.Core
 
             try
             {
-                AsnElt KerberosPacket = AsnElt.Decode(data);
-                AsnElt[] Sequences = KerberosPacket.Sub[0].Sub;
+                var KerberosPacket = AsnElt.Decode(data);
+                var Sequences = KerberosPacket.Sub[0].Sub;
 
-                int PVNO = (int) Sequences[0].Sub[0].GetInteger();
+                var PVNO = (int) Sequences[0].Sub[0].GetInteger();
 
-                int MSG_TYPE = (int) Sequences[1].Sub[0].GetInteger();
+                var MSG_TYPE = (int) Sequences[1].Sub[0].GetInteger();
 
                 if (MSG_TYPE > 0 && PVNO == 5)
                 {
-                    AsnElt PA_DATA = Sequences[2];
+                    var PA_DATA = Sequences[2];
 
-                    AsnElt REQ_BODY = Sequences[3];
+                    var REQ_BODY = Sequences[3];
 
                     if (MessageFactory.Messages.ContainsKey(MSG_TYPE))
                     {
                         if (PA_DATA != null && REQ_BODY != null)
                         {
-                            Message ReceviedMessage = (Message)Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
+                            var ReceviedMessage =
+                                (Message) Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
 
                             ReceviedMessage.MSG_TYPE = MSG_TYPE;
                             ReceviedMessage.PA_DATA = PA_DATA;
@@ -78,7 +78,7 @@ namespace XboxLive.MACS.Core
 
         public void Send(byte[] data)
         {
-            int length = XServer.SendToClient(data);
+            var length = XServer.SendToClient(data);
 
             if (length > 0)
                 Logger.Info("Sent " + length + " bytes back to client!");
