@@ -16,9 +16,12 @@ namespace XboxLive.MACS.Packets.Messages
     public class AS_REQ : Message
     {
         public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+<<<<<<< HEAD
 
         // == TEMPORARY HARDCODED VALUES ==
         // All of these are 16 bytes, and only work with the default XQEMU EEPROM values
+=======
+>>>>>>> 2acb7475c9722854e79c2a3d6f856e7ff50e085a
 
         // Decrypted Client Online Key - TODO: Decrypt this from the client
         public byte[] OnlineKey =
@@ -271,8 +274,13 @@ namespace XboxLive.MACS.Packets.Messages
                 // Used to send the online key, now we're sending an arbitrary session key
                 EndPart.key = new EncryptionKey();
                 {
+<<<<<<< HEAD
                     EndPart.key.keytype = (int)Interop.KERB_ETYPE.rc4_hmac;
                     EndPart.key.keyvalue = SessionKey;
+=======
+                    EndPart.key.keytype = (int) Interop.KERB_ETYPE.rc4_hmac;
+                    EndPart.key.keyvalue = OnlineKey; // fill it with 0's :P
+>>>>>>> 2acb7475c9722854e79c2a3d6f856e7ff50e085a
                 }
 
                 EndPart.lastReq = new LastReq();
