@@ -22,11 +22,19 @@ namespace XboxLive.MACS.Packets.Messages
         public EncKDCRepPart EndPart { get; set; }
         public byte[] nonceHmac { get; set; }
 
-        // Decrypted Online Key (16 bytes) - Temp
-        // AKA PRE-SHARED KEY
+        // == TEMPORARY HARDCODED VALUES ==
+        // All of these are 16 bytes, and only work with the default XQEMU EEPROM values
+
+        // Decrypted Client Online Key - TODO: Decrypt this from the client
         public byte[] OnlineKey =
         {
             0x4f, 0xf6, 0xea, 0xa3, 0x86, 0x08, 0xdd, 0xc5, 0x95, 0x08, 0x55, 0xbf, 0xee, 0xc7, 0xdd, 0x00
+        };
+
+        // Random Session Key - TODO: Figure out if this is randomly generated or created through client info
+        public byte[] SessionKey =
+        {
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
         };
 
         public byte[] SaltedNonce =
@@ -260,10 +268,11 @@ namespace XboxLive.MACS.Packets.Messages
 
             EndPart = new EncKDCRepPart();
             {
+                // Used to send the online key, now we're sending an arbitrary session key
                 EndPart.key = new EncryptionKey();
                 {
                     EndPart.key.keytype = (int)Interop.KERB_ETYPE.rc4_hmac;
-                    EndPart.key.keyvalue = OnlineKey; // fill it with 0's :P
+                    EndPart.key.keyvalue = SessionKey;
                 }
 
                 EndPart.lastReq = new LastReq();
