@@ -311,6 +311,7 @@ namespace XboxLive.MACS
             PA_PAC_REQUEST_EX = 131,
             CLIENT_CANONICALIZED = 133,
             PA_XBOX_PRE_PRE_AUTH = 204,
+            PA_XBIX_ACCOUNT_CREATION = 203,
             PA_XBOX_CLIENT_VERSION = 206
         }
 

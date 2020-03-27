@@ -4,6 +4,11 @@ namespace XboxLive.MACS.Structures.KRB_Structures
 {
     public class EncryptedData
     {
+        public EncryptedData()
+        {
+
+        }
+
         public EncryptedData(int encType, int Kvno, byte[] data)
         {
             etype = encType;
@@ -24,14 +29,14 @@ namespace XboxLive.MACS.Structures.KRB_Structures
 
             var cipherAsn = AsnElt.MakeBlob(cipher);
             var cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
-            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cipherSeq);
+            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, cipherSeq);
 
 
             if (kvno != 0)
             {
                 var kvnoAsn = AsnElt.MakeInteger(kvno);
                 var kvnoSeq = AsnElt.Make(AsnElt.SEQUENCE, kvnoAsn);
-                kvnoSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, kvnoSeq);
+                kvnoSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, kvnoSeq);
 
                 var totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, kvnoSeq, cipherSeq);
                 return totalSeq;

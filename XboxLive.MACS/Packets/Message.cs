@@ -3,7 +3,7 @@ using XboxLive.MACS.Core;
 
 namespace XboxLive.MACS.Packets
 {
-    public class ClientMessage
+    public class Message
     {
         public XClient Client;
 
@@ -12,35 +12,20 @@ namespace XboxLive.MACS.Packets
         public AsnElt PA_DATA;
         public AsnElt REQ_BODY;
 
-        public ClientMessage(XClient client)
+        public Message(XClient client)
         {
-            this.Client = client;
+            Client = client;
         }
 
         public virtual void Decode()
         {
         }
 
-        public virtual void Process()
-        {
-        }
-    }
-
-    public class ServerMessage
-    {
-        public XClient Client;
-
-        public byte[] ResponseData;
-
-        public ServerMessage(XClient client)
-        {
-            this.Client = client;
-        }
-
         public virtual byte[] Encode()
         {
             return null;
         }
+
         public virtual void Process()
         {
         }

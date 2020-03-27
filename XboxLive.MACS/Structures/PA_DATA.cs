@@ -1,40 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using NLog;
 using XboxLive.MACS.ASN;
+using XboxLive.MACS.Crypto;
+using XboxLive.MACS.Structures.KRB_Structures;
 using XboxLive.MACS.Structures.PA_Structures;
 
 namespace XboxLive.MACS.Structures
 {
     public class PA_DATA
     {
-        public AsnElt Encode203(long puid, string gamertag, string domain, string realm, byte[] key)
-        {
-            var buffer = new byte[84];
-
-            var machineaccount = new BinaryWriter(new MemoryStream(buffer));
-            machineaccount.Write(puid);
-            machineaccount.Write(gamertag);
-            machineaccount.Write(domain);
-            machineaccount.Write(realm);
-            machineaccount.Write(key);
-
-            machineaccount.Close();
-
-            var etypeAsn = AsnElt.MakeInteger((int) Interop.KERB_ETYPE.rc4_hmac);
-            var etypeSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeAsn);
-
-            etypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, etypeSeq);
-
-            var cipherAsn = AsnElt.MakeBlob(buffer);
-            var cipherSeq = AsnElt.Make(AsnElt.SEQUENCE, cipherAsn);
-
-            cipherSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, cipherSeq);
-
-            var totalSeq = AsnElt.Make(AsnElt.SEQUENCE, etypeSeq, cipherSeq);
-
-            return totalSeq;
-        }
+        public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public PA_ENC_TIMESTAMP Decode2(AsnElt body)
         {

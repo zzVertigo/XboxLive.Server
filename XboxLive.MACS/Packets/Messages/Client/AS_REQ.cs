@@ -7,6 +7,7 @@ using NLog;
 using XboxLive.MACS.ASN;
 using XboxLive.MACS.Core;
 using XboxLive.MACS.Crypto;
+using XboxLive.MACS.Packets.Messages.Server;
 using XboxLive.MACS.Structures;
 using XboxLive.MACS.Structures.KRB_Structures;
 using XboxLive.MACS.Structures.PA_Structures;
@@ -16,12 +17,9 @@ namespace XboxLive.MACS.Packets.Messages
     public class AS_REQ : Message
     {
         public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-<<<<<<< HEAD
 
         // == TEMPORARY HARDCODED VALUES ==
         // All of these are 16 bytes, and only work with the default XQEMU EEPROM values
-=======
->>>>>>> 2acb7475c9722854e79c2a3d6f856e7ff50e085a
 
         // Decrypted Client Online Key - TODO: Decrypt this from the client
         public byte[] OnlineKey =
@@ -42,13 +40,9 @@ namespace XboxLive.MACS.Packets.Messages
 
         public AS_REQ(XClient client) : base(client)
         {
+            MSG_TYPE = 10;
+            Client = client;
         }
-
-        public PrincipalName cname { get; set; }
-        public PrincipalName crealm { get; set; }
-        public Ticket reqTicket { get; set; }
-        public EncKDCRepPart EndPart { get; set; }
-        public byte[] nonceHmac { get; set; }
 
         public PA_XBOX_CLIENT_VERSION PA_XBOX_CLIENT_VERSION { get; set; }
         public PA_ENC_TIMESTAMP PA_ENC_TIMESTAMP { get; set; }
@@ -128,10 +122,14 @@ namespace XboxLive.MACS.Packets.Messages
             Logger.Info("temp_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
             var secondhash = new HMACMD5(temp_key);
-            nonceHmac = secondhash.ComputeHash(SaltedNonce);
+            byte[] nonceHmac = secondhash.ComputeHash(SaltedNonce);
+
+            // set the nonceHmac for later
+            Array.Copy(nonceHmac, Client.NonceHmacKey, nonceHmac.Length);
+
             Logger.Info("nonce_hmac_key -> 0x" + BitConverter.ToString(temp_key).Replace("-", ""));
 
-            Logger.Info("Version String: " + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Version));
+            //Logger.Info("Version String: " + BitConverter.ToString(PA_XBOX_CLIENT_VERSION.Version));
 
             var thirdhash = new HMACSHA1(nonceHmac);
             var test_signature = thirdhash.ComputeHash(PA_XBOX_CLIENT_VERSION.Version);
@@ -161,7 +159,7 @@ namespace XboxLive.MACS.Packets.Messages
                 Client.Realm = "PASSPORT.NET";
                 Client.Domain = "XBOX.COM";
 
-                Client.Key = OnlineKey;
+                Array.Copy(OnlineKey, Client.OnlineKey, OnlineKey.Length);
 
                 Client.Till = TILL;
                 Client.Nonce = NONCE;
@@ -185,7 +183,9 @@ namespace XboxLive.MACS.Packets.Messages
                     {
                         Logger.Info("TSCHK -> " + TSCHK);
 
-                        BuildResponse();
+                        AS_REP rep = new AS_REP(Client);
+
+                        Client.Send(rep);
                     }
                 }
             }
@@ -199,136 +199,129 @@ namespace XboxLive.MACS.Packets.Messages
             // - enckdcpart
 
             // TODO: Find out what the MD4 hashed key is.
-            var accountInfo = new PA_DATA().Encode203(1, Client.GamerTag, Client.Domain, Client.Realm,
-                Encoding.UTF8.GetBytes(""));
+            //var accountInfo = new PA_DATA().Encode203(1, Client.GamerTag, Client.Domain, Client.Realm,
+            //    Encoding.UTF8.GetBytes(""));
 
-            var cnames = new List<string>
-            {
-                Client.SerialNumber,
-                Client.Realm
-            };
+            //var cnames = new List<string>
+            //{
+            //    Client.SerialNumber,
+            //    Client.Realm
+            //};
 
-            var allNodes = new List<AsnElt>();
+            //var allNodes = new List<AsnElt>();
 
-            // Header 
+            //// Header 
 
-            var pvnoASN = AsnElt.MakeInteger(5);
-            var pvnoSEQ = AsnElt.Make(AsnElt.SEQUENCE, pvnoASN);
-            pvnoSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, pvnoSEQ);
-            allNodes.Add(pvnoSEQ);
+            //var pvnoASN = AsnElt.MakeInteger(5);
+            //var pvnoSEQ = AsnElt.Make(AsnElt.SEQUENCE, pvnoASN);
+            //pvnoSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 0, pvnoSEQ);
+            //allNodes.Add(pvnoSEQ);
 
-            var msg_typeASN = AsnElt.MakeInteger(11);
-            var msg_typeSEQ = AsnElt.Make(AsnElt.SEQUENCE, msg_typeASN);
-            msg_typeSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, msg_typeSEQ);
-            allNodes.Add(msg_typeSEQ);
+            //var msg_typeASN = AsnElt.MakeInteger(11);
+            //var msg_typeSEQ = AsnElt.Make(AsnElt.SEQUENCE, msg_typeASN);
+            //msg_typeSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, msg_typeSEQ);
+            //allNodes.Add(msg_typeSEQ);
 
-            // End
+            //// End
 
-            // Machine Account Info PA_DATA
+            //// Machine Account Info PA_DATA
 
-            var encryptedAccount = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1,
-                KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac,
-                    Interop.KRB_KEY_USAGE_KRB_PRIV_ENCRYPTED_PART, nonceHmac, accountInfo.Encode()));
+            //var encryptedAccount = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1,
+            //    KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac,
+            //        Interop.KRB_KEY_USAGE_KRB_PRIV_ENCRYPTED_PART, nonceHmac, accountInfo.Encode()));
 
-            var typeElt = AsnElt.MakeInteger(203);
-            var nameTypeSeq = AsnElt.Make(AsnElt.SEQUENCE, typeElt);
-            nameTypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, nameTypeSeq);
+            //var typeElt = AsnElt.MakeInteger(203);
+            //var nameTypeSeq = AsnElt.Make(AsnElt.SEQUENCE, typeElt);
+            //nameTypeSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, nameTypeSeq);
 
-            var padataSeq = AsnElt.Make(AsnElt.SEQUENCE, nameTypeSeq, encryptedAccount.Encode());
-            //allNodes.Add(padataSeq);
+            //var padataSeq = AsnElt.Make(AsnElt.SEQUENCE, nameTypeSeq, encryptedAccount.Encode());
+            ////allNodes.Add(padataSeq);
 
-            // End
+            //// End
 
-            // crealm
+            //// crealm
 
-            var crealmElt = AsnElt.MakeString(AsnElt.GeneralString, Client.Realm);
-            var crealmSeq = AsnElt.Make(AsnElt.SEQUENCE, crealmElt);
-            crealmSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 3, crealmSeq);
-            allNodes.Add(crealmSeq);
+            //var crealmElt = AsnElt.MakeString(AsnElt.GeneralString, Client.Realm);
+            //var crealmSeq = AsnElt.Make(AsnElt.SEQUENCE, crealmElt);
+            //crealmSeq = AsnElt.MakeImplicit(AsnElt.CONTEXT, 3, crealmSeq);
+            //allNodes.Add(crealmSeq);
 
-            // End
+            //// End
 
-            // cname
+            //// cname
 
-            cname = new PrincipalName(cnames, 2);
+            //cname = new PrincipalName(cnames, 2);
 
-            var cnameElt = cname.Encode();
-            cnameElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 4, cnameElt);
-            allNodes.Add(cnameElt);
+            //var cnameElt = cname.Encode();
+            //cnameElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 4, cnameElt);
+            //allNodes.Add(cnameElt);
 
-            // End
+            //// End
 
-            // ticket
+            //// ticket
 
-            reqTicket = new Ticket();
-            var ticketElt = reqTicket.Encode(OnlineKey);
-            ticketElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 5, ticketElt);
-            allNodes.Add(ticketElt);
+            //reqTicket = new Ticket();
+            //var ticketElt = reqTicket.Encode(OnlineKey);
+            //ticketElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 5, ticketElt);
+            //allNodes.Add(ticketElt);
 
-            // End
+            //// End
 
-            // enckdcpart
+            //// enckdcpart
 
-            EndPart = new EncKDCRepPart();
-            {
-                // Used to send the online key, now we're sending an arbitrary session key
-                EndPart.key = new EncryptionKey();
-                {
-<<<<<<< HEAD
-                    EndPart.key.keytype = (int)Interop.KERB_ETYPE.rc4_hmac;
-                    EndPart.key.keyvalue = SessionKey;
-=======
-                    EndPart.key.keytype = (int) Interop.KERB_ETYPE.rc4_hmac;
-                    EndPart.key.keyvalue = OnlineKey; // fill it with 0's :P
->>>>>>> 2acb7475c9722854e79c2a3d6f856e7ff50e085a
-                }
+            //EndPart = new EncKDCRepPart();
+            //{
+            //    // Used to send the online key, now we're sending an arbitrary session key
+            //    EndPart.key = new EncryptionKey();
+            //    {
+            //        EndPart.key.keytype = (int)Interop.KERB_ETYPE.rc4_hmac;
+            //        EndPart.key.keyvalue = SessionKey;
+            //    }
 
-                EndPart.lastReq = new LastReq();
-                {
-                    // 0 - no info
-                    // 1 - last intial TGT request
-                    // 2 - last intial request
-                    // 3 - newest TGT used
-                    // 4 - last renewal
-                    // 5 - last request (of any type)
+            //    EndPart.lastReq = new LastReq();
+            //    {
+            //        // 0 - no info
+            //        // 1 - last intial TGT request
+            //        // 2 - last intial request
+            //        // 3 - newest TGT used
+            //        // 4 - last renewal
+            //        // 5 - last request (of any type)
 
-                    EndPart.lastReq.lr_type = 5;
-                    EndPart.lastReq.lr_value = DateTime.Now;
-                }
+            //        EndPart.lastReq.lr_type = 5;
+            //        EndPart.lastReq.lr_value = DateTime.Now;
+            //    }
 
-                EndPart.nonce = (uint) new Random(1206).Next(1000, 10000);
+            //    EndPart.nonce = (uint) new Random(1206).Next(1000, 10000);
 
-                EndPart.flags = Interop.TicketFlags.initial | Interop.TicketFlags.pre_authent;
+            //    EndPart.flags = Interop.TicketFlags.initial | Interop.TicketFlags.pre_authent;
 
-                EndPart.authtime = DateTime.Now;
+            //    EndPart.authtime = DateTime.Now;
 
-                EndPart.endtime = new DateTime(2019, 8, 7);
+            //    EndPart.endtime = new DateTime(2019, 8, 7);
 
-                EndPart.realm = "MACS.XBOX.COM";
-            }
+            //    EndPart.realm = "MACS.XBOX.COM";
+            //}
 
-            // TODO: Move encryption to EncryptedData class
-            var EndPartData = EndPart.Encode().Encode();
+            //// TODO: Move encryption to EncryptedData class
+            //var EndPartData = EndPart.Encode().Encode();
 
-            EndPartData = KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac,
-                Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY, Client.Key, EndPartData);
+            //EndPartData = KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac,
+            //    Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY, Client.Key, EndPartData);
 
-            var encData = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1, EndPartData);
+            //var encData = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1, EndPartData);
 
-            var encPart = AsnElt.MakeImplicit(AsnElt.CONTEXT, 6, encData.Encode());
-            allNodes.Add(encPart);
+            //var encPart = AsnElt.MakeImplicit(AsnElt.CONTEXT, 6, encData.Encode());
+            //allNodes.Add(encPart);
 
-            // End
+            //// End
 
-            var seq = AsnElt.Make(AsnElt.SEQUENCE, allNodes.ToArray());
-            var seq2 = AsnElt.Make(AsnElt.SEQUENCE, seq);
-            seq2 = AsnElt.MakeImplicit(AsnElt.APPLICATION, 11, seq2);
+            //var seq = AsnElt.Make(AsnElt.SEQUENCE, allNodes.ToArray());
+            //var seq2 = AsnElt.Make(AsnElt.SEQUENCE, seq);
+            //seq2 = AsnElt.MakeImplicit(AsnElt.APPLICATION, 11, seq2);
 
-            var toSend = seq2.Encode();
+            //var toSend = seq2.Encode();
 
-            Logger.Info(BitConverter.ToString(toSend).Replace("-", ""));
-
-            Client.Send(toSend);
+            // DO not use yet till AS_REP is done!
         }
 
         public override string ToString()

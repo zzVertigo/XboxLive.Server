@@ -20,11 +20,15 @@ namespace XboxLive.MACS.Core
 
         public string Domain { get; set; }
 
-        public byte[] Key { get; set; }
+        public byte[] OnlineKey = new byte[16];
+
+        public byte[] NonceHmacKey = new byte[16];
 
         public DateTime Till { get; set; }
 
         public long Nonce { get; set; }
+
+        public const ulong EncryptionOverheadLength = 24; // sizeof(RC4_MDx_HEADER)
 
         public void Decode(byte[] data)
         {
@@ -50,7 +54,7 @@ namespace XboxLive.MACS.Core
                         if (PA_DATA != null && REQ_BODY != null)
                         {
                             var ReceviedMessage =
-                                (ClientMessage) Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
+                                (Message) Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
 
                             ReceviedMessage.MSG_TYPE = MSG_TYPE;
                             ReceviedMessage.PA_DATA = PA_DATA;
@@ -76,7 +80,7 @@ namespace XboxLive.MACS.Core
             Logger.Info("Successfully decoded received packet!");
         }
 
-        public void Send(ServerMessage Message)
+        public void Send(Message Message)
         {
             byte[] data = Message.Encode();
             Message.Process();
