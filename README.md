@@ -3,6 +3,8 @@
 
 **Experimenting** with the revival of Xbox Live 1.0
 
+![XboxLive.Server](https://github.com/zzVertigo/XboxLive.Server/workflows/XboxLive.Server/badge.svg?branch=master)
+
 **Warning**: This is by no means complete and there is zero guarnatee that I my self will get the XBL service running.
 
 For those interested in contributing to the project please join the [XBL Homebrew Discord](https://discord.gg/HsHnHZ5)!
