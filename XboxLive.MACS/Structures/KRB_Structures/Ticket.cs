@@ -44,9 +44,7 @@ namespace XboxLive.MACS.Structures.KRB_Structures
             allNodes.Add(snameAsn);
 
             // TODO: Find proper key type
-            encdata = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1,
-                KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac, Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY,
-                    OnlineKey, SessionKey));
+            encdata = new EncryptedData((int) Interop.KERB_ETYPE.rc4_hmac, 1, KerberosCrypto.KerberosEncrypt(Interop.KERB_ETYPE.rc4_hmac, Interop.KRB_KEY_USAGE_AS_REP_EP_SESSION_KEY, OnlineKey, SessionKey));
 
             var enc_partAsn = encdata.Encode();
             var enc_partSeq = AsnElt.Make(AsnElt.SEQUENCE, enc_partAsn);

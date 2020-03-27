@@ -50,7 +50,7 @@ namespace XboxLive.MACS.Core
                         if (PA_DATA != null && REQ_BODY != null)
                         {
                             var ReceviedMessage =
-                                (Message) Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
+                                (ClientMessage) Activator.CreateInstance(MessageFactory.Messages[MSG_TYPE], this);
 
                             ReceviedMessage.MSG_TYPE = MSG_TYPE;
                             ReceviedMessage.PA_DATA = PA_DATA;
@@ -76,8 +76,11 @@ namespace XboxLive.MACS.Core
             Logger.Info("Successfully decoded received packet!");
         }
 
-        public void Send(byte[] data)
+        public void Send(ServerMessage Message)
         {
+            byte[] data = Message.Encode();
+            Message.Process();
+
             var length = XServer.SendToClient(data);
 
             if (length > 0)
