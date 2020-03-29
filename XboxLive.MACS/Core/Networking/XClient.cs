@@ -66,6 +66,16 @@ namespace XboxLive.MACS.Core
                     }
                     else
                     {
+                        // If this happens I wanna KNOW its happening lol
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
+                        Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
                         Logger.Warn("Received unknown msg_type " + MSG_TYPE + "!");
                     }
                 }

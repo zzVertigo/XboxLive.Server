@@ -14,8 +14,21 @@ using XboxLive.MACS.Structures.PA_Structures;
 
 namespace XboxLive.MACS.Packets.Messages
 {
+    //AS-REQ          ::= [APPLICATION 10] KDC-REQ
+
+    //KDC-REQ         ::= SEQUENCE {
+    //    -- NOTE: first tag is [1], not [0]
+    //    pvno            [1] INTEGER (5) ,
+    //    msg-type        [2] INTEGER (10 -- AS),
+    //    padata          [3] SEQUENCE OF PA-DATA OPTIONAL
+    //                        -- NOTE: not empty --,
+    //    req-body        [4] KDC-REQ-BODY
+    //}
+
     public class AS_REQ : Message
     {
+        public static bool firstTime = true;
+
         public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         // == TEMPORARY HARDCODED VALUES ==
@@ -25,12 +38,6 @@ namespace XboxLive.MACS.Packets.Messages
         public byte[] OnlineKey =
         {
             0x4f, 0xf6, 0xea, 0xa3, 0x86, 0x08, 0xdd, 0xc5, 0x95, 0x08, 0x55, 0xbf, 0xee, 0xc7, 0xdd, 0x00
-        };
-
-        // Random Session Key - TODO: Figure out if this is randomly generated or created through client info
-        public byte[] SessionKey =
-        {
-            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
         };
 
         public byte[] SaltedNonce =
@@ -79,6 +86,11 @@ namespace XboxLive.MACS.Packets.Messages
             SNAME_TYPE = REQ_BODY.Sub[0].Sub[3].Sub[0].Sub[0].Sub[0].GetInteger();
             SNAME1 = REQ_BODY.Sub[0].Sub[3].Sub[0].Sub[1].Sub[0].Sub[0].GetString();
             SNAME2 = REQ_BODY.Sub[0].Sub[3].Sub[0].Sub[1].Sub[0].Sub[1].GetString();
+
+            Logger.Info("CNAME: " + CNAME);
+            Logger.Info("REALM: " + REALM);
+            Logger.Info("SNAME1: " + SNAME1);
+            Logger.Info("SNAME2: " + SNAME2);
 
             TILL = REQ_BODY.Sub[0].Sub[4].Sub[0].GetTime();
 
@@ -183,9 +195,16 @@ namespace XboxLive.MACS.Packets.Messages
                     {
                         Logger.Info("TSCHK -> " + TSCHK);
 
-                        AS_REP rep = new AS_REP(Client);
+                        if (firstTime)
+                        {
+                            Client.Send(new KRB_ERROR(this.Client));
 
-                        Client.Send(rep);
+                            firstTime = false;
+                        }
+                        else
+                        {
+                            Client.Send(new AS_REP(this.Client));
+                        }
                     }
                 }
             }

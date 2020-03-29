@@ -14,7 +14,7 @@ namespace XboxLive.MACS.Structures.KRB_Structures
 
         public EncryptedData encdata { get; set; }
 
-        public AsnElt Encode(byte[] OnlineKey)
+        public AsnElt Encode()
         {
             AsnElt tkt_vnoAsn = AsnElt.MakeInteger(tkt_vno);
             AsnElt tkt_vnoSeq = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[] { tkt_vnoAsn });

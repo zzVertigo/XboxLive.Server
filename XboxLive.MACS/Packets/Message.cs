@@ -9,6 +9,8 @@ namespace XboxLive.MACS.Packets
 
         public int MSG_TYPE;
 
+        public int PVNO = 5;
+
         public AsnElt PA_DATA;
         public AsnElt REQ_BODY;
 

@@ -21,9 +21,15 @@ namespace XboxLive.MACS.Structures.PA_Structures
         {
             byte[] machine_account_buffer = new byte[84]; // i think?
 
+            byte[] bytes = BitConverter.GetBytes(puid);
+
+            Array.Reverse(bytes);
+
+            long result = BitConverter.ToInt64(bytes); // honestly might not matter THAT much but doing it anyways
+
             var machineaccount = new BinaryWriter(new MemoryStream(machine_account_buffer));
             {
-                machineaccount.Write((long)puid);
+                machineaccount.Write((long)result);
                 machineaccount.Write((string)gamertag);
                 machineaccount.Write((string)domain);
                 machineaccount.Write((string)realm);
@@ -38,9 +44,20 @@ namespace XboxLive.MACS.Structures.PA_Structures
 
             Logger.Warn("Length of ciphertext: " + encBytes.Length);
 
-            EncryptedData encdata = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, 0, encBytes);
 
-            return encdata.Encode();
+            AsnElt typeELT = AsnElt.MakeInteger((long) 203);
+            AsnElt nameTypeSEQ = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[] {typeELT});
+            nameTypeSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 1, nameTypeSEQ);
+
+            EncryptedData encdata = new EncryptedData((int)Interop.KERB_ETYPE.rc4_hmac, 1, encBytes);
+
+            AsnElt blob = AsnElt.MakeBlob(((EncryptedData)encdata).Encode().Encode());
+            AsnElt blobSEQ = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[] {blob});
+            blobSEQ = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, blobSEQ);
+
+            AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[] {nameTypeSEQ, blobSEQ});
+
+            return seq;
         }
     }
 }
