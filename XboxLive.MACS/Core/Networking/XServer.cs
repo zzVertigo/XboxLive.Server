@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Microsoft.Extensions.Options;
 using NLog;
 using XboxLive.MACS.Core.Configuration;
 
@@ -21,9 +22,9 @@ namespace XboxLive.MACS.Core
 
         private ServerOptions options;
 
-        public XServer(ServerOptions serverOptions)
+        public XServer(IOptions<ServerOptions> serverOptions)
         {
-            options = serverOptions;
+            options = serverOptions.Value;
         }
 
         public void Start()
